@@ -18,26 +18,29 @@ TEAM_ABBR = {
 TEAM_IDS = {team['name']: team['id'] for team in statsapi.get('teams', {'sportIds': 1})['teams']}
 
 def get_game(team_name, mode="next"):
-    """Get next or last game for given team name."""
+    """Fetch full game data for next or last game using game_id."""
     team_id = TEAM_IDS.get(team_name)
     if not team_id:
         return None
 
     today = datetime.now().date()
-
-    if mode == "next":
-        future = today + timedelta(days=7)
-        games = statsapi.schedule(team=team_id, start_date=str(today), end_date=str(future))
-        for game in games:
-            if game['status'] not in ['Final', 'Postponed']:
-                return game
-    else:
-        past = today - timedelta(days=7)
-        games = statsapi.schedule(team=team_id, start_date=str(past), end_date=str(today))
-        for game in reversed(games):
-            if game['status'] in ['Final']:
-                return game
+    try:
+        if mode == "next":
+            future = today + timedelta(days=7)
+            games = statsapi.schedule(team=team_id, start_date=str(today), end_date=str(future))
+            for g in games:
+                if g['status'] not in ['Final', 'Postponed']:
+                    return statsapi.get("game", {"gamePk": g["game_id"]})
+        else:
+            past = today - timedelta(days=7)
+            games = statsapi.schedule(team=team_id, start_date=str(past), end_date=str(today))
+            for g in reversed(games):
+                if g['status'] in ['Final']:
+                    return statsapi.get("game", {"gamePk": g["game_id"]})
+    except Exception as e:
+        print("Error fetching game data:", e)
     return None
+
 
 def get_team_lineup(game, team_abbr):
     """Return dummy lineup until real lineup API integration."""
