@@ -3,6 +3,7 @@
 from datetime import datetime, timedelta
 import statsapi
 
+from mlb_api import TEAM_ABBR
 
 TEAM_ABBR = {
     'Arizona Diamondbacks': 'ARI',
