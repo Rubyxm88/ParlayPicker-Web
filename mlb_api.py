@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 import statsapi
-
+import pprint
+pprint.pprint(game)
 TEAM_ID = {
     'Arizona Diamondbacks': 109,
     'Atlanta Braves': 144,
