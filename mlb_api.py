@@ -40,20 +40,21 @@ TEAM_IDS = {
 
 def get_next_game(team_name):
     """Get the next scheduled game for the team."""
-    team_abbr = TEAM_ABBR.get(team_name)
-    if not team_abbr:
+    team_id = TEAM_IDS.get(team_name)
+    if not team_id:
         return None
 
     today = datetime.now().date()
-    future = today + timedelta(days=7)  # Look ahead a week
+    future = today + timedelta(days=7)
 
-    schedule = statsapi.schedule(team=team_abbr, start_date=today.strftime('%Y-%m-%d'), end_date=future.strftime('%Y-%m-%d'))
+    schedule = statsapi.schedule(team=team_id, start_date=str(today), end_date=str(future))
 
     for game in schedule:
         if game['status'] not in ('Final', 'Postponed'):
             return game
 
     return None
+
 
 
 
