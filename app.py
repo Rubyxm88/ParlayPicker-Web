@@ -33,10 +33,10 @@ if not game:
     st.stop()
 
 # Extract info
-home_team = game["home_name"]
-away_team = game["away_name"]
-home_abbr = game["home_abbr"]
-away_abbr = game["away_abbr"]
+home_team = game["teams"]["home"]["team"]["name"]
+away_team = game["teams"]["away"]["team"]["name"]
+home_abbr = TEAMS.get(home_team, "")
+away_abbr = TEAMS.get(away_team, "")
 game_time = game["game_date"]
 venue = game.get("venue_name", "Unknown Venue")
 
