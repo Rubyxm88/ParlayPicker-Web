@@ -66,11 +66,11 @@ def get_game(team_name, mode="next"):
         if mode == "next":
             for g in games:
                 if g["status"] not in ("Postponed", "Cancelled"):
-                    return statsapi.get("game", {"gamePk": g["game_id"]})
+                    return statsapi.get("game", {"gamePk": g["gamePk"]})
         else:
             for g in reversed(games):
                 if g["status"] == "Final":
-                    return statsapi.get("game", {"gamePk": g["game_id"]})
+                    return statsapi.get("game", {"gamePk": g["gamePk"]})
 
     except Exception as e:
         print(f"🔥 statsapi error: {e}")
