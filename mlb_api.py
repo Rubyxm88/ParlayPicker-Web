@@ -73,45 +73,24 @@ def get_game(team_name, mode="next"):
     return None
 
 def get_team_lineup(game_data, team_abbr):
-    return get_live_lineup(game_data["gamePk"], team_abbr)
-
+    return [f"Player {i+1}" for i in range(9)]
 
 def get_live_lineup(game_id, team_abbr):
     try:
         game_data = statsapi.get("game", {"gamePk": game_id})
-
-        # Pull team IDs for both sides
-        home_id = game_data["gameData"]["teams"]["home"]["id"]
-        away_id = game_data["gameData"]["teams"]["away"]["id"]
-        home_abbr = game_data["gameData"]["teams"]["home"]["abbreviation"]
-        away_abbr = game_data["gameData"]["teams"]["away"]["abbreviation"]
-
-        # Determine which side we're fetching
-        if team_abbr == home_abbr:
-            team_side = "home"
-            team_id = home_id
-        elif team_abbr == away_abbr:
-            team_side = "away"
-            team_id = away_id
-        else:
-            print(f"❌ Abbreviation mismatch: {team_abbr} not found in game")
-            return []
-
-        # Get boxscore batters
-        batters = game_data["liveData"]["boxscore"]["teams"][team_side]["batters"]
         players = game_data["gameData"]["players"]
-
         lineup = []
-        for pid in batters:
-            player_key = f"ID{pid}"
-            name = players.get(player_key, {}).get("fullName", "Unknown Player")
-            lineup.append(name)
 
-        if not lineup:
-            print(f"⚠️ No batters found for {team_abbr} in game {game_id}")
+        for value in game_data["liveData"]["boxscore"]["teams"].values():
+            if value["team"]["abbreviation"] == team_abbr:
+                for batter in value["batters"]:
+                    player_key = f"ID{batter}"
+                    name = players[player_key]["fullName"]
+                    lineup.append(name)
+                break
 
         return lineup
 
     except Exception as e:
-        print(f"🔥 Error fetching lineup for {team_abbr}: {e}")
+        print(f"⚠️ Lineup fetch error for {team_abbr}: {e}")
         return []
