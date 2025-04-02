@@ -101,7 +101,7 @@ if game:
     game_time = game["game_datetime"]
 
     st.subheader(f"{away_team} @ {home_team} — {datetime.fromisoformat(game_time).strftime('%A, %B %d @ %I:%M %p')}")
-    st.write(f"Venue: {game['venue']}")
+    st.write(f"Venue: {game.get('venue', 'Unknown Venue')}")
     st.image([get_logo_url(away_abbr), get_logo_url(home_abbr)], width=150)
 
     # Pitchers
