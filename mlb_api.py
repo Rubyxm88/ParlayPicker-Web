@@ -1,4 +1,3 @@
-# mlb_api.py
 from datetime import datetime, timedelta
 import statsapi
 
@@ -15,23 +14,26 @@ TEAM_ABBR = {
     'Texas Rangers': 'TEX', 'Toronto Blue Jays': 'TOR', 'Washington Nationals': 'WSH'
 }
 
+# Map team name to team ID (from official MLB Stats API)
+TEAM_IDS = {team['name']: team['id'] for team in statsapi.get('teams', {'sportIds': 1})['teams']}
+
 def get_game(team_name, mode="next"):
     """Get next or last game for given team name."""
-    abbr = TEAM_ABBR.get(team_name)
-    if not abbr:
+    team_id = TEAM_IDS.get(team_name)
+    if not team_id:
         return None
 
     today = datetime.now().date()
 
     if mode == "next":
         future = today + timedelta(days=7)
-        games = statsapi.schedule(team=abbr, start_date=str(today), end_date=str(future))
+        games = statsapi.schedule(team=team_id, start_date=str(today), end_date=str(future))
         for game in games:
             if game['status'] not in ['Final', 'Postponed']:
                 return game
     else:
         past = today - timedelta(days=7)
-        games = statsapi.schedule(team=abbr, start_date=str(past), end_date=str(today))
+        games = statsapi.schedule(team=team_id, start_date=str(past), end_date=str(today))
         for game in reversed(games):
             if game['status'] in ['Final']:
                 return game
