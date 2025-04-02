@@ -41,14 +41,12 @@ TEAM_ABBR = {
 
 def get_next_game(team_name):
     """Get the next scheduled game for the team."""
-    from .mlb_api import TEAM_ABBR  # If needed, adjust import structure
-
     team_abbr = TEAM_ABBR.get(team_name)
     if not team_abbr:
         return None
 
     today = datetime.now().date()
-    future = today + timedelta(days=7)  # Look ahead up to 7 days
+    future = today + timedelta(days=7)  # Look ahead a week
 
     schedule = statsapi.schedule(team=team_abbr, start_date=today.strftime('%Y-%m-%d'), end_date=future.strftime('%Y-%m-%d'))
 
@@ -57,6 +55,7 @@ def get_next_game(team_name):
             return game
 
     return None
+
 
 
 def get_probable_pitchers(game):
