@@ -38,7 +38,7 @@ away_team = game["away_name"]
 home_abbr = TEAMS.get(home_team, "")
 away_abbr = TEAMS.get(away_team, "")
 game_time = game["game_datetime"]
-venue = game.get("venue", "Unknown Venue")
+venue = game.get("venue_name", "Unknown Venue")
 
 st.subheader(f"{away_team} @ {home_team} — {pd.to_datetime(game_time).strftime('%A, %B %d @ %I:%M %p')}")
 st.caption(f"Venue: {venue}")
