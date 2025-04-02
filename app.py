@@ -27,10 +27,8 @@ def get_team_id(name):
     return None
 
 def get_next_game(team_id):
-    schedule = statsapi.schedule(team=team_id, start_date=None, end_date=None)
-    if schedule:
-        return schedule[0]
-    return None
+    schedule = statsapi.schedule(team=team_id)
+    return schedule[0] if schedule else None
 
 def get_logo_url(abbr):
     return f"https://a.espncdn.com/i/teamlogos/mlb/500/{abbr.lower()}.png"
@@ -43,13 +41,30 @@ def dummy_ev(prop):
         "suggestion": "OVER"
     }
 
-def build_batter_table(team_name):
+def get_lineups(game_id):
+    boxscore = statsapi.boxscore_data(game_id)
+    away = boxscore['away']['players']
+    home = boxscore['home']['players']
+
+    def extract_players(players):
+        lineup = []
+        for pid, pdata in players.items():
+            if 'battingOrder' in pdata:
+                lineup.append((int(pdata['battingOrder']), pdata['person']['fullName']))
+        return [p[1] for p in sorted(lineup)]
+
+    return extract_players(away), extract_players(home)
+
+def get_pitcher_name(game, team_type):
+    try:
+        return game[f'{team_type}_probable_pitcher']['fullName']
+    except:
+        return "TBD"
+
+def build_batter_table(names):
     data = []
-    for i in range(9):
-        row = {
-            "Pos": i + 1,
-            "Player": f"Player {i + 1}"
-        }
+    for i, player in enumerate(names):
+        row = {"Pos": i + 1, "Player": player}
         for prop in ["HR", "Hits", "RBI"]:
             ev = dummy_ev(prop)
             row[f"{prop} Line"] = ev['line']
@@ -59,19 +74,19 @@ def build_batter_table(team_name):
         data.append(row)
     return pd.DataFrame(data)
 
-def build_pitcher_table(team_name):
+def build_pitcher_table(team, pitcher):
     ev = dummy_ev("K")
     return pd.DataFrame([{
-        "Pitcher": "TBD",
-        "Team": team_name,
+        "Pitcher": pitcher,
+        "Team": team,
         "K Line": "o/u 5.5",
         "K Trend": "Steady",
-        "K EV": "+8%",
-        "Suggestion": "OVER"
+        "K EV": ev['ev'],
+        "Suggestion": ev['suggestion']
     }])
 
 # ------------------------------
-# Streamlit App
+# Streamlit UI
 # ------------------------------
 
 st.set_page_config(page_title="MLB Parlay Picker", layout="wide")
@@ -83,36 +98,44 @@ team_id = get_team_id(team_choice)
 game = get_next_game(team_id)
 
 if game:
-    home_team = game.get("home_name", "Unknown")
-    away_team = game.get("away_name", "Unknown")
-    game_time = game.get("game_datetime", "")
+    home_team = game['home_name']
+    away_team = game['away_name']
+    home_abbr = TEAM_ABBR.get(home_team, "NYY")
+    away_abbr = TEAM_ABBR.get(away_team, "BOS")
+    game_time = game['game_datetime']
     venue = game.get("venue", {}).get("name", "Unknown Venue")
 
     st.subheader(f"{away_team} @ {home_team} — {datetime.fromisoformat(game_time).strftime('%A, %B %d @ %I:%M %p')}")
     st.write(f"Venue: {venue}")
-    
+
     col1, col2 = st.columns(2)
     with col1:
-        st.image(get_logo_url(TEAM_ABBR.get(away_team, 'NYY')), width=120)
+        st.image(get_logo_url(away_abbr), width=120)
     with col2:
-        st.image(get_logo_url(TEAM_ABBR.get(home_team, 'BOS')), width=120)
+        st.image(get_logo_url(home_abbr), width=120)
 
     # Pitchers
+    away_pitcher = get_pitcher_name(game, "away")
+    home_pitcher = get_pitcher_name(game, "home")
+
     col1, col2 = st.columns(2)
     with col1:
         st.subheader(f"{away_team} Pitcher")
-        st.dataframe(build_pitcher_table(away_team), hide_index=True)
+        st.dataframe(build_pitcher_table(away_team, away_pitcher), hide_index=True)
     with col2:
         st.subheader(f"{home_team} Pitcher")
-        st.dataframe(build_pitcher_table(home_team), hide_index=True)
+        st.dataframe(build_pitcher_table(home_team, home_pitcher), hide_index=True)
 
-    # Batters
+    # Lineups
+    away_lineup, home_lineup = get_lineups(game["game_id"])
+
     col1, col2 = st.columns(2)
     with col1:
         st.subheader(f"{away_team} Lineup")
-        st.dataframe(build_batter_table(away_team), hide_index=True)
+        st.dataframe(build_batter_table(away_lineup), hide_index=True)
     with col2:
         st.subheader(f"{home_team} Lineup")
-        st.dataframe(build_batter_table(home_team), hide_index=True)
+        st.dataframe(build_batter_table(home_lineup), hide_index=True)
+
 else:
     st.warning("No upcoming game found.")
