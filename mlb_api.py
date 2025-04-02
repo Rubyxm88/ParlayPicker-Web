@@ -77,3 +77,9 @@ def get_game(team_name, mode="next"):
 
     return None
 
+def get_team_lineup(game_data, team_abbr):
+    """
+    Returns a dummy list of player names for now.
+    In the future, you can replace this with real lineup extraction.
+    """
+    return [f"Player {i+1}" for i in range(9)]
