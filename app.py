@@ -1,13 +1,11 @@
 import streamlit as st
-import statsapi
 import pandas as pd
+import requests
 from datetime import datetime
+from mlb_api import get_next_game, get_team_lineup
 
-# ------------------------------
-# Helpers
-# ------------------------------
-
-TEAM_ABBR = {
+# Team abbreviation + logo map
+TEAMS = {
     "Arizona Diamondbacks": "ARI", "Atlanta Braves": "ATL", "Baltimore Orioles": "BAL",
     "Boston Red Sox": "BOS", "Chicago White Sox": "CWS", "Chicago Cubs": "CHC",
     "Cincinnati Reds": "CIN", "Cleveland Guardians": "CLE", "Colorado Rockies": "COL",
@@ -20,130 +18,100 @@ TEAM_ABBR = {
     "Texas Rangers": "TEX", "Toronto Blue Jays": "TOR", "Washington Nationals": "WSH"
 }
 
-def get_team_id(name):
-    for team in statsapi.get('teams', {'sportIds': 1})['teams']:
-        if name.lower() in team['name'].lower():
-            return team['id']
-    return None
+st.set_page_config(page_title="MLB Parlay Picker", layout="wide")
+st.title("⚾ Parlay Picker: MLB Matchups & Props")
 
-def get_next_game(team_id):
-    schedule = statsapi.schedule(team=team_id)
-    return schedule[0] if schedule else None
+team_name = st.selectbox("Select a team:", list(TEAMS.keys()))
+abbr = TEAMS[team_name]
 
-def get_logo_url(abbr):
-    return f"https://a.espncdn.com/i/teamlogos/mlb/500/{abbr.lower()}.png"
+# Fetch game info
+game = get_next_game(abbr)
 
+if not game:
+    st.error("No game found for today.")
+    st.stop()
+
+# Extract teams
+home_team = game["teams"]["home"]["team"]["name"]
+away_team = game["teams"]["away"]["team"]["name"]
+home_abbr = TEAMS.get(home_team, "")
+away_abbr = TEAMS.get(away_team, "")
+game_time = game["gameDate"]
+
+st.subheader(f"{away_team} @ {home_team} — {datetime.fromisoformat(game_time[:-1]).strftime('%A, %B %d @ %I:%M %p')}")
+venue = game.get("venue", {}).get("name", "Unknown Venue")
+st.write(f"Venue: {venue}")
+
+# Display logos
+col1, col2 = st.columns(2)
+with col1:
+    st.image(f"https://a.espncdn.com/i/teamlogos/mlb/500/{away_abbr.lower()}.png", width=120)
+with col2:
+    st.image(f"https://a.espncdn.com/i/teamlogos/mlb/500/{home_abbr.lower()}.png", width=120)
+
+# Dummy pitcher table (placeholder data for now)
+def build_pitcher_table(team_name):
+    return pd.DataFrame([{
+        "Pitcher": "TBD",
+        "Team": team_name,
+        "K Line": "o/u 5.5",
+        "K Trend": "Steady",
+        "K EV": "+8%",
+        "Suggestion": "OVER"
+    }])
+
+col1, col2 = st.columns(2)
+with col1:
+    st.subheader(f"{away_team} Pitcher")
+    st.dataframe(build_pitcher_table(away_team), use_container_width=True)
+
+with col2:
+    st.subheader(f"{home_team} Pitcher")
+    st.dataframe(build_pitcher_table(home_team), use_container_width=True)
+
+
+# Dummy EV data for now — replace with real statcast/odds logic later
 def dummy_ev(prop):
     return {
         "line": "o/u 0.5" if prop != "Hits" else "o/u 1.5",
         "trend": "🔥" if prop == "HR" else "Steady",
-        "ev": "+12%" if prop == "HR" else "+8%",
+        "ev": "+12%",
         "suggestion": "OVER"
     }
 
-def get_lineups(game_id):
-    try:
-        game_data = statsapi.get("game", {"gamePk": game_id})
-        home_players = game_data.get("home", {}).get("players", [])
-        away_players = game_data.get("away", {}).get("players", [])
-
-        def parse_players(players):
-            lineup = []
-            for p in players:
-                full_name = p.get("person", {}).get("fullName")
-                order = p.get("battingOrder")
-                if full_name and order:
-                    lineup.append((int(order), full_name))
-            lineup.sort()
-            return [name for _, name in lineup]
-
-        return parse_players(away_players), parse_players(home_players)
-    except Exception as e:
-        print(f"[Lineup Error] {e}")
-        return [], []
-
-
-def get_pitcher_name(game, team_type):
-    try:
-        return game[f'{team_type}_probable_pitcher']['fullName']
-    except:
-        return "TBD"
-
-def build_batter_table(names):
+# Build batter table with EV columns for HR, Hits, and RBI
+def build_batter_table(team_name, players):
     data = []
-    for i, player in enumerate(names):
-        row = {"Pos": i + 1, "Player": player}
+    for i, player in enumerate(players):
+        row = {
+            "Pos": i + 1,
+            "Player": player
+        }
         for prop in ["HR", "Hits", "RBI"]:
             ev = dummy_ev(prop)
-            row[f"{prop} Line"] = ev['line']
-            row[f"{prop} Trend"] = ev['trend']
-            row[f"{prop} EV"] = ev['ev']
-            row[f"{prop} Suggest"] = ev['suggestion']
+            row[f"{prop} Line"] = ev["line"]
+            row[f"{prop} Trend"] = ev["trend"]
+            row[f"{prop} EV"] = ev["ev"]
+            row[f"{prop} Suggest"] = ev["suggestion"]
         data.append(row)
     return pd.DataFrame(data)
 
-def build_pitcher_table(team, pitcher):
-    ev = dummy_ev("K")
-    return pd.DataFrame([{
-        "Pitcher": pitcher,
-        "Team": team,
-        "K Line": "o/u 5.5",
-        "K Trend": "Steady",
-        "K EV": ev['ev'],
-        "Suggestion": ev['suggestion']
-    }])
+# Lineups (pull live or fallback to placeholder)
+away_lineup = get_team_lineup(game, away_abbr)
+home_lineup = get_team_lineup(game, home_abbr)
 
-# ------------------------------
-# Streamlit UI
-# ------------------------------
+# Show batter lineups
+col1, col2 = st.columns(2)
+with col1:
+    st.subheader(f"{away_team} Lineup")
+    if away_lineup:
+        st.dataframe(build_batter_table(away_team, away_lineup), use_container_width=True)
+    else:
+        st.write("empty")
 
-st.set_page_config(page_title="MLB Parlay Picker", layout="wide")
-st.title("⚾ Parlay Picker: MLB Matchups & Props")
-
-team_choice = st.selectbox("Select a team:", list(TEAM_ABBR.keys()))
-
-team_id = get_team_id(team_choice)
-game = get_next_game(team_id)
-
-if game:
-    home_team = game['home_name']
-    away_team = game['away_name']
-    home_abbr = TEAM_ABBR.get(home_team, "NYY")
-    away_abbr = TEAM_ABBR.get(away_team, "BOS")
-    game_time = game['game_datetime']
-    venue = game.get("venue", {}).get("name") or game.get("venue_name", "Unknown Venue")
-
-    st.subheader(f"{away_team} @ {home_team} — {datetime.fromisoformat(game_time).strftime('%A, %B %d @ %I:%M %p')}")
-    st.write(f"Venue: {venue}")
-
-    col1, col2 = st.columns(2)
-    with col1:
-        st.image(get_logo_url(away_abbr), width=120)
-    with col2:
-        st.image(get_logo_url(home_abbr), width=120)
-
-    # Pitchers
-    away_pitcher = get_pitcher_name(game, "away")
-    home_pitcher = get_pitcher_name(game, "home")
-
-    col1, col2 = st.columns(2)
-    with col1:
-        st.subheader(f"{away_team} Pitcher")
-        st.dataframe(build_pitcher_table(away_team, away_pitcher), hide_index=True)
-    with col2:
-        st.subheader(f"{home_team} Pitcher")
-        st.dataframe(build_pitcher_table(home_team, home_pitcher), hide_index=True)
-
-    # Lineups
-    away_lineup, home_lineup = get_lineups(game["game_id"])
-
-    col1, col2 = st.columns(2)
-    with col1:
-        st.subheader(f"{away_team} Lineup")
-        st.dataframe(build_batter_table(away_lineup), hide_index=True)
-    with col2:
-        st.subheader(f"{home_team} Lineup")
-        st.dataframe(build_batter_table(home_lineup), hide_index=True)
-
-else:
-    st.warning("No upcoming game found.")
+with col2:
+    st.subheader(f"{home_team} Lineup")
+    if home_lineup:
+        st.dataframe(build_batter_table(home_team, home_lineup), use_container_width=True)
+    else:
+        st.write("empty")
