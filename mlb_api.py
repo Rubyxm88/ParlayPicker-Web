@@ -47,9 +47,9 @@ def get_game(team_name, mode="next"):
     try:
         if mode == "next":
             start = today
-            end = today + timedelta(days=10)
+            end = today + timedelta(days=7)
         else:
-            start = today - timedelta(days=10)
+            start = today - timedelta(days=7)
             end = today
 
         games = statsapi.schedule(
@@ -60,20 +60,20 @@ def get_game(team_name, mode="next"):
 
         print(f"📊 {len(games)} games found for {team_name}")
 
-        if mode == "next":
-            for g in games:
-                if g["status"] not in ("Postponed", "Cancelled"):
-                    game_data = statsapi.get("game", {"gamePk": g["gamePk"]})
-                    print("✅ Upcoming game data:")
-                    pprint.pprint(game_data)
-                    return game_data
-        else:
-            for g in reversed(games):
-                if g["status"] == "Final":
-                    game_data = statsapi.get("game", {"gamePk": g["gamePk"]})
-                    print("✅ Last game data:")
-                    pprint.pprint(game_data)
-                    return game_data
+        for g in (games if mode == "next" else reversed(games)):
+            if (mode == "next" and g["status"] not in ("Postponed", "Cancelled")) or \
+               (mode == "last" and g["status"] == "Final"):
+                simplified = {
+                    "home_team": g["home_name"],
+                    "away_team": g["away_name"],
+                    "home_abbr": g["home_code"].upper(),
+                    "away_abbr": g["away_code"].upper(),
+                    "game_date": g["game_datetime"],
+                    "venue_name": g.get("venue_name", "Unknown Venue"),
+                }
+                print("✅ Game found:")
+                pprint.pprint(simplified)
+                return simplified
 
     except Exception as e:
         print(f"🔥 statsapi error: {e}")
@@ -84,7 +84,6 @@ def get_game(team_name, mode="next"):
 
 def get_team_lineup(game_data, team_abbr):
     """
-    Returns a dummy list of player names for now.
-    Replace this with real lineup logic later.
+    Returns dummy players for now.
     """
     return [f"Player {i+1}" for i in range(9)]
