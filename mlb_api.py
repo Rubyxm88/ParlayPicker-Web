@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 import statsapi
 import pprint
-pprint.pprint(game)
+
 TEAM_ID = {
     'Arizona Diamondbacks': 109,
     'Atlanta Braves': 144,
@@ -35,9 +35,6 @@ TEAM_ID = {
     'Washington Nationals': 120
 }
 
-def simplify_game(game):
-    # Converts game dict into just what we need
-    return statsapi.get("game", {"gamePk": game["game_id"]})
 
 def get_game(team_name, mode="next"):
     team_id = TEAM_ID.get(team_name)
@@ -66,11 +63,17 @@ def get_game(team_name, mode="next"):
         if mode == "next":
             for g in games:
                 if g["status"] not in ("Postponed", "Cancelled"):
-                    return statsapi.get("game", {"gamePk": g["gamePk"]})
+                    game_data = statsapi.get("game", {"gamePk": g["gamePk"]})
+                    print("✅ Upcoming game data:")
+                    pprint.pprint(game_data)
+                    return game_data
         else:
             for g in reversed(games):
                 if g["status"] == "Final":
-                    return statsapi.get("game", {"gamePk": g["gamePk"]})
+                    game_data = statsapi.get("game", {"gamePk": g["gamePk"]})
+                    print("✅ Last game data:")
+                    pprint.pprint(game_data)
+                    return game_data
 
     except Exception as e:
         print(f"🔥 statsapi error: {e}")
@@ -78,9 +81,10 @@ def get_game(team_name, mode="next"):
 
     return None
 
+
 def get_team_lineup(game_data, team_abbr):
     """
     Returns a dummy list of player names for now.
-    In the future, you can replace this with real lineup extraction.
+    Replace this with real lineup logic later.
     """
     return [f"Player {i+1}" for i in range(9)]
