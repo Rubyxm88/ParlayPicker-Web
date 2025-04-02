@@ -19,15 +19,16 @@ TEAM_ABBR = {
 def get_game(team_name, mode="next"):
     abbr = TEAM_ABBR.get(team_name)
     if not abbr:
+        print("Invalid team name:", team_name)
         return None
 
     today = datetime.today().date()
 
     if mode == "next":
         start_date = today
-        end_date = today + timedelta(days=7)
+        end_date = today + timedelta(days=10)
     else:
-        start_date = today - timedelta(days=7)
+        start_date = today - timedelta(days=10)
         end_date = today
 
     try:
@@ -40,17 +41,24 @@ def get_game(team_name, mode="next"):
         print(f"⚠️ statsapi.schedule() failed for {abbr}: {e}")
         return None
 
-    # Get first non-final (next game) or last final (last game)
+    print(f"📅 Found {len(games)} games for {team_name} from {start_date} to {end_date}")
+    for game in games:
+        print(f"- {game['game_datetime']} | {game['away_name']} @ {game['home_name']} | Status: {game['status']}")
+
+    # For NEXT: return first playable game
     if mode == "next":
         for game in games:
-            if game['status'] not in ('Final', 'Postponed'):
+            if game['status'] not in ('Postponed', 'Cancelled'):
                 return simplify_game(game)
+
+    # For LAST: return last completed game
     else:
         for game in reversed(games):
             if game['status'] == 'Final':
                 return simplify_game(game)
 
     return None
+
 
 
 def simplify_game(game):
