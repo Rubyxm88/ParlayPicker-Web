@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import requests
 from datetime import datetime
-from mlb_api import get_next_game, get_team_lineup
+from mlb_api import get_game, get_team_lineup
 
 # Team abbreviation + logo map
 TEAMS = {
@@ -22,13 +22,14 @@ st.set_page_config(page_title="MLB Parlay Picker", layout="wide")
 st.title("⚾ Parlay Picker: MLB Matchups & Props")
 
 team_name = st.selectbox("Select a team:", list(TEAMS.keys()))
-abbr = TEAMS[team_name]
+mode = st.radio("Show:", ["Upcoming Game", "Last Game"], horizontal=True)
+mode = "next" if mode == "Upcoming Game" else "last"
 
 # Fetch game info
-game = get_next_game(abbr)
+game = get_game(team_name, mode)
 
 if not game:
-    st.error("No game found for today.")
+    st.error("No game found for selected mode.")
     st.stop()
 
 # Extract teams
@@ -69,7 +70,6 @@ with col2:
     st.subheader(f"{home_team} Pitcher")
     st.dataframe(build_pitcher_table(home_team), use_container_width=True)
 
-
 # Dummy EV data for now — replace with real statcast/odds logic later
 def dummy_ev(prop):
     return {
@@ -97,6 +97,8 @@ def build_batter_table(team_name, players):
     return pd.DataFrame(data)
 
 # Lineups (pull live or fallback to placeholder)
+away_abbr = TEAMS.get(away_team)
+home_abbr = TEAMS.get(home_team)
 away_lineup = get_team_lineup(game, away_abbr)
 home_lineup = get_team_lineup(game, home_abbr)
 
