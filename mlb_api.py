@@ -73,4 +73,24 @@ def get_game(team_name, mode="next"):
     return None
 
 def get_team_lineup(game_data, team_abbr):
-    return [f"Player {i+1}" for i in range(9)]
+    return get_live_lineup(game_data["game_id"], team_abbr)
+
+def get_live_lineup(game_id, team_abbr):
+    try:
+        game_data = statsapi.get("game", {"gamePk": game_id})
+        players = game_data["gameData"]["players"]
+        lineup = []
+
+        for value in game_data["liveData"]["boxscore"]["teams"].values():
+            if value["team"]["abbreviation"] == team_abbr:
+                for batter in value["batters"]:
+                    player_key = f"ID{batter}"
+                    name = players[player_key]["fullName"]
+                    lineup.append(name)
+                break
+
+        return lineup
+
+    except Exception as e:
+        print(f"⚠️ Lineup fetch error for {team_abbr}: {e}")
+        return []

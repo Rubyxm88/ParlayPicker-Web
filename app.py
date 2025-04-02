@@ -98,6 +98,7 @@ def build_batter_table(players):
 away_lineup = get_team_lineup(game, away_abbr)
 home_lineup = get_team_lineup(game, home_abbr)
 
+
 # Display lineups
 col1, col2 = st.columns(2)
 with col1:
