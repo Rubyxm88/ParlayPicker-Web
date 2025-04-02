@@ -1,74 +1,104 @@
-# app.py
 import streamlit as st
-from mlb_api import get_next_game, get_probable_pitchers
-from datetime import datetime
+import statsapi
+import pandas as pd
+from datetime import datetime, timedelta
 
-st.set_page_config(page_title="Parlay Picker", layout="wide")
+# Function to fetch team ID and abbreviation
+def get_team_info(team_name):
+    teams = statsapi.get('teams', {'sportIds': 1})['teams']
+    for team in teams:
+        if team_name.lower() == team['name'].lower():
+            return team['id'], team['abbreviation']
+    return None, None
 
-st.title("⚾ Parlay Picker: MLB Props & Matchups")
+# Function to fetch upcoming game details
+def get_next_game(team_id):
+    now = datetime.now().date()
+    schedule = statsapi.schedule(start_date=now, end_date=now + timedelta(days=7), team=team_id)
+    if schedule:
+        game = schedule[0]
+        return {
+            'game_time': game['game_datetime'],
+            'home': game['home_name'],
+            'away': game['away_name'],
+            'game_id': game['game_id']
+        }
+    return None
 
-# Sidebar team selector
-st.sidebar.header("Select Your Team")
-TEAMS = [
-    'Arizona Diamondbacks', 'Atlanta Braves', 'Baltimore Orioles', 'Boston Red Sox',
-    'Chicago White Sox', 'Chicago Cubs', 'Cincinnati Reds', 'Cleveland Guardians',
-    'Colorado Rockies', 'Detroit Tigers', 'Houston Astros', 'Kansas City Royals',
-    'Los Angeles Angels', 'Los Angeles Dodgers', 'Miami Marlins', 'Milwaukee Brewers',
-    'Minnesota Twins', 'New York Yankees', 'New York Mets', 'Oakland Athletics',
-    'Philadelphia Phillies', 'Pittsburgh Pirates', 'San Diego Padres',
-    'San Francisco Giants', 'Seattle Mariners', 'St. Louis Cardinals',
-    'Tampa Bay Rays', 'Texas Rangers', 'Toronto Blue Jays', 'Washington Nationals'
-]
+# Function to fetch probable pitchers
+def get_probable_pitchers(game_id):
+    boxscore = statsapi.boxscore_data(game_id)
+    pitchers = {'home': 'TBD', 'away': 'TBD'}
+    for team in ['home', 'away']:
+        try:
+            pitchers[team] = boxscore['teamInfo'][team]['probablePitcher']['fullName']
+        except KeyError:
+            continue
+    return pitchers
 
-selected_team = st.sidebar.selectbox("Team", TEAMS)
+# Function to fetch team lineup
+def get_team_lineup(game_id, team_type):
+    lineup = []
+    try:
+        game_data = statsapi.get('game', {'gamePk': game_id})
+        for player in game_data['gameData']['players'].values():
+            if player['parentTeamId'] == game_data['gameData']['teams'][team_type]['id'] and player['gameStatus']['isStarter']:
+                lineup.append(player['fullName'])
+    except KeyError:
+        pass
+    return lineup
 
-# Fetch and display game info
-with st.spinner("Fetching next game info..."):
-    game = get_next_game(selected_team)
+# Function to calculate player trends and expected value (EV)
+def calculate_player_ev(player_name, stat_type):
+    # Placeholder function: Implement your logic to calculate trends and EV based on historical data
+    # For example, analyze past performance against similar pitchers, recent form, etc.
+    return {
+        'line': 'o/u 0.5',
+        'trend': 'Steady',
+        'ev': '+5%',
+        'suggestion': 'Over'
+    }
 
-if not game:
-    st.error("No upcoming games found for this team.")
-    st.stop()
+# Streamlit UI
+st.title("MLB Matchup Analysis")
 
-# Format game time
-game_dt = datetime.fromisoformat(game["game_time"].replace("Z", "+00:00"))
-pretty_date = game_dt.strftime("%A, %B %d @ %I:%M %p")
+team_name = st.selectbox("Select a team:", [team['name'] for team in statsapi.get('teams', {'sportIds': 1})['teams']])
 
-# Game header
-st.markdown(f"### {game['away']} @ {game['home']} — {pretty_date}")
-st.markdown(f"**Venue:** {game['venue']}")
+if team_name:
+    team_id, team_abbr = get_team_info(team_name)
+    if team_id:
+        game = get_next_game(team_id)
+        if game:
+            st.subheader(f"Upcoming Game: {game['away']} at {game['home']}")
+            st.write(f"Game Time: {game['game_time']}")
 
-# Fetch probable pitchers
-pitchers = get_probable_pitchers(game["game_id"])
+            # Display team logos
+            home_logo = f"https://www.mlbstatic.com/team-logos/{get_team_info(game['home'])[0]}.svg"
+            away_logo = f"https://www.mlbstatic.com/team-logos/{get_team_info(game['away'])[0]}.svg"
+            st.image([away_logo, home_logo], width=150)
 
-col1, col2 = st.columns(2)
-with col1:
-    st.subheader(f"🧢 {game['away']} Pitcher")
-    st.write(pitchers['away'])
+            pitchers = get_probable_pitchers(game['game_id'])
+            st.write(f"Probable Pitchers: {game['away']} - {pitchers['away']}, {game['home']} - {pitchers['home']}")
 
-with col2:
-    st.subheader(f"🧢 {game['home']} Pitcher")
-    st.write(pitchers['home'])
+            # Display lineups and player props
+            for team, lineup in [('away', get_team_lineup(game['game_id'], 'away')), ('home', get_team_lineup(game['game_id'], 'home'))]:
+                st.subheader(f"{game[team]} Lineup")
+                df = pd.DataFrame(columns=['Player', 'HR Line', 'HR Trend', 'HR EV', 'HR Suggestion',
+                                           'Hits Line', 'Hits Trend', 'Hits EV', 'Hits Suggestion',
+                                           'RBI Line', 'RBI Trend', 'RBI EV', 'RBI Suggestion'])
+                for player in lineup:
+                    hr_ev = calculate_player_ev(player, 'home_runs')
+                    hits_ev = calculate_player_ev(player, 'hits')
+                    rbi_ev = calculate_player_ev(player, 'rbi')
+                    df = df.append({
+                        'Player': player,
+                        'HR Line': hr_ev['line'], 'HR Trend': hr_ev['trend'], 'HR EV': hr_ev['ev'], 'HR Suggestion': hr_ev['suggestion'],
+                        'Hits Line': hits_ev['line'], 'Hits Trend': hits_ev['trend'], 'Hits EV': hits_ev['ev'], 'Hits Suggestion': hits_ev['suggestion'],
+                        'RBI Line': rbi_ev['line'], 'RBI Trend': rbi_ev['trend'], 'RBI EV': rbi_ev['ev'], 'RBI Suggestion': rbi_ev['suggestion']
+                    }, ignore_index=True)
+                st.dataframe(df)
 
-# --- Placeholder: Lineup Fetch (to be replaced later with live data) ---
-dummy_lineup = [f"Player {i+1}" for i in range(9)]
-
-def build_lineup_table(team_name, players):
-    """Display lineup with placeholder props."""
-    st.markdown(f"#### {team_name} Lineup")
-    st.table({
-        "Pos": list(range(1, 10)),
-        "Player": players,
-        "HR Line": ["o/u 0.5"] * 9,
-        "Trend": ["Steady"] * 9,
-        "+EV": ["+5%"] * 9
-    })
-
-# --- Display both team lineups ---
-col1, col2 = st.columns(2)
-
-with col1:
-    build_lineup_table(game['away'], dummy_lineup)
-
-with col2:
-    build_lineup_table(game['home'], dummy_lineup)
+        else:
+            st.write("No upcoming games found.")
+    else:
+        st.write("Team not found.")
