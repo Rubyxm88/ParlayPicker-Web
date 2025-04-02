@@ -33,14 +33,14 @@ if not game:
     st.stop()
 
 # Extract info
-home_team = game["teams"]["home"]["team"]["name"]
-away_team = game["teams"]["away"]["team"]["name"]
+home_team = game["home_name"]
+away_team = game["away_name"]
 home_abbr = TEAMS.get(home_team, "")
 away_abbr = TEAMS.get(away_team, "")
-game_time = game["game_date"]
-venue = game.get("venue_name", "Unknown Venue")
+game_time = game["game_datetime"]
+venue = game.get("venue", "Unknown Venue")
 
-st.subheader(f"{away_team} @ {home_team} — {datetime.fromisoformat(game_time[:-1]).strftime('%A, %B %d @ %I:%M %p')}")
+st.subheader(f"{away_team} @ {home_team} — {pd.to_datetime(game_time).strftime('%A, %B %d @ %I:%M %p')}")
 st.caption(f"Venue: {venue}")
 
 # Team logos
