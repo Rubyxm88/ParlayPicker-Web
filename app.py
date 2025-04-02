@@ -42,18 +42,26 @@ def dummy_ev(prop):
     }
 
 def get_lineups(game_id):
-    boxscore = statsapi.boxscore_data(game_id)
-    away = boxscore['away']['players']
-    home = boxscore['home']['players']
+    try:
+        game_data = statsapi.get("game", {"gamePk": game_id})
+        home_players = game_data.get("home", {}).get("players", [])
+        away_players = game_data.get("away", {}).get("players", [])
 
-    def extract_players(players):
-        lineup = []
-        for pid, pdata in players.items():
-            if 'battingOrder' in pdata:
-                lineup.append((int(pdata['battingOrder']), pdata['person']['fullName']))
-        return [p[1] for p in sorted(lineup)]
+        def parse_players(players):
+            lineup = []
+            for p in players:
+                full_name = p.get("person", {}).get("fullName")
+                order = p.get("battingOrder")
+                if full_name and order:
+                    lineup.append((int(order), full_name))
+            lineup.sort()
+            return [name for _, name in lineup]
 
-    return extract_players(away), extract_players(home)
+        return parse_players(away_players), parse_players(home_players)
+    except Exception as e:
+        print(f"[Lineup Error] {e}")
+        return [], []
+
 
 def get_pitcher_name(game, team_type):
     try:
@@ -103,7 +111,7 @@ if game:
     home_abbr = TEAM_ABBR.get(home_team, "NYY")
     away_abbr = TEAM_ABBR.get(away_team, "BOS")
     game_time = game['game_datetime']
-    venue = game.get("venue", {}).get("name", "Unknown Venue")
+    venue = game.get("venue", {}).get("name") or game.get("venue_name", "Unknown Venue")
 
     st.subheader(f"{away_team} @ {home_team} — {datetime.fromisoformat(game_time).strftime('%A, %B %d @ %I:%M %p')}")
     st.write(f"Venue: {venue}")
