@@ -61,19 +61,10 @@ def get_game(team_name, mode="next"):
         print(f"📊 {len(games)} games found for {team_name}")
 
         for g in (games if mode == "next" else reversed(games)):
-            if (mode == "next" and g["status"] not in ("Postponed", "Cancelled")) or \
-               (mode == "last" and g["status"] == "Final"):
-                simplified = {
-                    "home_team": g["home_name"],
-                    "away_team": g["away_name"],
-                    "home_abbr": g["home_code"].upper(),
-                    "away_abbr": g["away_code"].upper(),
-                    "game_date": g["game_datetime"],
-                    "venue_name": g.get("venue_name", "Unknown Venue"),
-                }
-                print("✅ Game found:")
-                pprint.pprint(simplified)
-                return simplified
+            if mode == "next" and g["status"] not in ("Postponed", "Cancelled"):
+                return g
+            elif mode == "last" and g["status"] == "Final":
+                return g
 
     except Exception as e:
         print(f"🔥 statsapi error: {e}")
@@ -81,9 +72,5 @@ def get_game(team_name, mode="next"):
 
     return None
 
-
 def get_team_lineup(game_data, team_abbr):
-    """
-    Returns dummy players for now.
-    """
     return [f"Player {i+1}" for i in range(9)]
