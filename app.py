@@ -26,18 +26,20 @@ mode = st.radio("Show:", ["Upcoming Game", "Last Game"], horizontal=True)
 mode = "next" if mode == "Upcoming Game" else "last"
 
 # Fetch game info
-game = get_game(team_name, mode)
+game = get_next_game(team_name)
 
 if not game:
-    st.error("No game found for selected mode.")
+    st.error("No game found for today.")
     st.stop()
 
-# Extract teams
-home_team = game["teams"]["home"]["team"]["name"]
-away_team = game["teams"]["away"]["team"]["name"]
+# ✅ This works with simplified game dict
+home_team = game["home_name"]
+away_team = game["away_name"]
 home_abbr = TEAMS.get(home_team, "")
 away_abbr = TEAMS.get(away_team, "")
-game_time = game["gameDate"]
+game_time = game["game_date"]
+venue = game.get("venue_name", "Unknown Venue")
+
 
 st.subheader(f"{away_team} @ {home_team} — {datetime.fromisoformat(game_time[:-1]).strftime('%A, %B %d @ %I:%M %p')}")
 venue = game.get("venue", {}).get("name", "Unknown Venue")
