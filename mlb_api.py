@@ -1,6 +1,8 @@
 # mlb_api.py
 
+from datetime import datetime, timedelta
 import statsapi
+
 
 TEAM_ABBR = {
     'Arizona Diamondbacks': 'ARI',
@@ -37,16 +39,23 @@ TEAM_ABBR = {
 
 
 def get_next_game(team_name):
-    """Get the next game for a team."""
+    """Get the next scheduled game for the team."""
+    from .mlb_api import TEAM_ABBR  # If needed, adjust import structure
+
     team_abbr = TEAM_ABBR.get(team_name)
     if not team_abbr:
         return None
 
-    schedule = statsapi.schedule(team=team_abbr, start_date=None, end_date=None)
-    if not schedule:
-        return None
+    today = datetime.now().date()
+    future = today + timedelta(days=7)  # Look ahead up to 7 days
 
-    return schedule[0]  # Return the first (next upcoming) game
+    schedule = statsapi.schedule(team=team_abbr, start_date=today.strftime('%Y-%m-%d'), end_date=future.strftime('%Y-%m-%d'))
+
+    for game in schedule:
+        if game['status'] not in ('Final', 'Postponed'):
+            return game
+
+    return None
 
 
 def get_probable_pitchers(game):
