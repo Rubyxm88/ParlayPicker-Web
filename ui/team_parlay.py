@@ -85,3 +85,4 @@ def show_team_parlay():
             st.dataframe(pd.DataFrame(data), use_container_width=True)
         else:
             st.write("No prop data found for this game.")
+__all__ = ["show_team_parlay"]
