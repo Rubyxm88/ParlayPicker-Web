@@ -1,53 +1,57 @@
 import requests
 import pandas as pd
-from bs4 import BeautifulSoup
-import datetime
-import json
+from datetime import datetime
 
-# Placeholder endpoints and methods — real implementation needs structure
 def fetch_draftkings_props():
     """
-    Scrape or use an API to get player prop lines from DraftKings.
-    Focus: HR, Hits, RBI, Ks
+    Simulated HR/Hits/RBI props with realistic structure for development/testing.
     """
-    # Example placeholder structure (you'd replace this with real requests/scraping logic)
-    url = "https://sportsbook.draftkings.com/leagues/baseball/mlb"
-    response = requests.get(url)
-    soup = BeautifulSoup(response.text, "html.parser")
+    now = datetime.now().isoformat()
 
-    # Placeholder logic
-    props = []
-    now = datetime.datetime.now()
-    props.append({
-        "player": "Aaron Judge",
-        "team": "NYY",
-        "category": "HR",
-        "line": 0.5,
-        "odds_over": -110,
-        "odds_under": -110,
-        "timestamp": now
-    })
-    return props
-
+    return [
+        {
+            "player": "Aaron Judge",
+            "team": "NYY",
+            "category": "HR",
+            "line": 0.5,
+            "odds_over": -110,
+            "odds_under": -110,
+            "timestamp": now
+        },
+        {
+            "player": "Aaron Judge",
+            "team": "NYY",
+            "category": "Hits",
+            "line": 1.5,
+            "odds_over": -105,
+            "odds_under": -115,
+            "timestamp": now
+        },
+        {
+            "player": "Aaron Judge",
+            "team": "NYY",
+            "category": "RBI",
+            "line": 0.5,
+            "odds_over": +100,
+            "odds_under": -120,
+            "timestamp": now
+        }
+    ]
 
 def fetch_statcast_data(start_date, end_date):
     """
-    Get historical data for hitters/pitchers between two dates from Baseball Savant.
-    Use savant scraping or APIs like baseballr (if running from R), or retrosheet CSVs.
+    Simulated Statcast logs: player, date, HR, Hits, RBI
     """
-    # Simulate with dummy data for now
     return pd.DataFrame([
-        {"player": "Aaron Judge", "date": "2024-09-10", "HR": 2, "Hits": 3, "RBI": 4},
-        {"player": "Aaron Judge", "date": "2024-09-11", "HR": 0, "Hits": 1, "RBI": 1}
+        {"player": "Aaron Judge", "date": "2025-04-01", "HR": 1, "Hits": 2, "RBI": 1},
+        {"player": "Aaron Judge", "date": "2025-04-02", "HR": 0, "Hits": 1, "RBI": 0},
+        {"player": "Aaron Judge", "date": "2025-04-03", "HR": 2, "Hits": 3, "RBI": 3},
     ])
-
 
 def fetch_fangraphs_stats():
     """
-    Pull advanced stats from FanGraphs leaderboard or player pages.
-    Could be done via scraping or CSV download if not API-accessible.
+    Simulated advanced stats from FanGraphs.
     """
-    # Simulated data for now
     return pd.DataFrame([
-        {"player": "Aaron Judge", "Barrel%": 17.5, "HardHit%": 51.2, "K%": 25.1}
+        {"player": "Aaron Judge", "Barrel%": 18.3, "HardHit%": 52.1, "K%": 24.8}
     ])
