@@ -1,70 +1,57 @@
 import requests
 import pandas as pd
-import datetime
-from pybaseball import statcast
-from pybaseball.fangraphs import batting_stats
+from datetime import datetime
 
-
-# --- DraftKings Props (via OpticOdds or similar service) ---
 def fetch_draftkings_props():
     """
-    Fetch player prop lines from DraftKings via a third-party API (e.g., OpticOdds).
-    Replace `your_opticodds_api_key` with your actual key and confirm the endpoint.
+    Simulated HR/Hits/RBI props with realistic structure for development/testing.
     """
-    api_key = 'your_opticodds_api_key'
-    url = 'https://api.opticodds.com/sportsbooks/draftkings/props'
-    headers = {'Authorization': f'Bearer {api_key}'}
+    now = datetime.now().isoformat()
 
-    try:
-        response = requests.get(url, headers=headers)
-        response.raise_for_status()
-        data = response.json()
-    except Exception as e:
-        print(f"Error fetching DraftKings props: {e}")
-        return []
-
-    props = []
-    now = datetime.datetime.now()
-    for item in data.get('props', []):
-        props.append({
-            "player": item.get("player_name"),
-            "team": item.get("team_abbreviation"),
-            "category": item.get("prop_category"),
-            "line": item.get("prop_line"),
-            "odds_over": item.get("odds_over"),
-            "odds_under": item.get("odds_under"),
+    return [
+        {
+            "player": "Aaron Judge",
+            "team": "NYY",
+            "category": "HR",
+            "line": 0.5,
+            "odds_over": -110,
+            "odds_under": -110,
             "timestamp": now
-        })
+        },
+        {
+            "player": "Aaron Judge",
+            "team": "NYY",
+            "category": "Hits",
+            "line": 1.5,
+            "odds_over": -105,
+            "odds_under": -115,
+            "timestamp": now
+        },
+        {
+            "player": "Aaron Judge",
+            "team": "NYY",
+            "category": "RBI",
+            "line": 0.5,
+            "odds_over": +100,
+            "odds_under": -120,
+            "timestamp": now
+        }
+    ]
 
-    return props
-
-
-# --- Baseball Savant Statcast Data ---
 def fetch_statcast_data(start_date, end_date):
     """
-    Fetch historical Statcast data using pybaseball for a given date range.
+    Simulated Statcast logs: player, date, HR, Hits, RBI
     """
-    try:
-        data = statcast(start_dt=start_date, end_dt=end_date)
-        return data[["player_name", "game_date", "events", "description", "launch_speed", "launch_angle"]]
-    except Exception as e:
-        print(f"Error fetching Statcast data: {e}")
-        return pd.DataFrame()
+    return pd.DataFrame([
+        {"player": "Aaron Judge", "date": "2025-04-01", "HR": 1, "Hits": 2, "RBI": 1},
+        {"player": "Aaron Judge", "date": "2025-04-02", "HR": 0, "Hits": 1, "RBI": 0},
+        {"player": "Aaron Judge", "date": "2025-04-03", "HR": 2, "Hits": 3, "RBI": 3},
+    ])
 
-
-# --- FanGraphs Advanced Stats ---
 def fetch_fangraphs_stats():
-    # Get qualified batters for the current season (adjust year if needed)
-    df = batting_stats(season=2024, qual=50)
-
-    # Normalize column names and filter needed ones
-    df = df.rename(columns={
-        'Name': 'player',
-        'Barrel%': 'BarrelPct',
-        'HardHit%': 'HardHitPct',
-        'K%': 'KPct'
-    })
-
-    df = df[['player', 'BarrelPct', 'HardHitPct', 'KPct']]
-    return df
-
+    """
+    Simulated advanced stats from FanGraphs.
+    """
+    return pd.DataFrame([
+        {"player": "Aaron Judge", "Barrel%": 18.3, "HardHit%": 52.1, "K%": 24.8}
+    ])
