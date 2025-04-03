@@ -1,3 +1,5 @@
+# database/connection.py
+
 import sqlite3
 from contextlib import contextmanager
 import os
@@ -17,9 +19,11 @@ def get_connection():
     finally:
         conn.close()
 
-# 👇 Add this alias to match expected import in other files
+# ✅ This is the alias expected by other files
 def get_db_connection():
-    return sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
 
 def execute(query, params=None):
     with get_connection() as conn:
