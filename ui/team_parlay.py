@@ -6,7 +6,7 @@ from analysis.trends import get_player_trends
 from analysis.expected_value import calculate_ev
 from datetime import datetime
 
-def display_team_parlay():
+def show_team_parlay():
     st.header("🧢 Team Matchups & Props")
 
     conn = get_db_connection()
