@@ -1,9 +1,9 @@
 import streamlit as st
-from data.cache import get_last_update_time, clear_cache
+from data.cache import get_last_update_time, write_cache, is_cache_stale
 from data.update_db import update_all
 from datetime import datetime
 
-def refresh_data():
+def show_refresh_button():
     st.markdown("### 🔄 Data Refresh")
 
     last_updated = get_last_update_time()
@@ -15,5 +15,5 @@ def refresh_data():
     if st.button("🔃 Refresh Now"):
         with st.spinner("Pulling fresh data..."):
             update_all()
-            clear_cache()
+            write_cache()
             st.success("✅ Data updated!")
