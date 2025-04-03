@@ -49,6 +49,41 @@ def initialize_tables():
             FOREIGN KEY(player_id) REFERENCES players(id)
         )
     """)
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS player_props (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            player TEXT,
+            team TEXT,
+            category TEXT,
+            line REAL,
+            odds_over REAL,
+            odds_under REAL,
+            timestamp TEXT
+        )
+    """)
+
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS game_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            player TEXT,
+            date TEXT,
+            HR INTEGER,
+            Hits INTEGER,
+            RBI INTEGER
+        )
+    """)
+
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS advanced_stats (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            player TEXT,
+            BarrelPct REAL,
+            HardHitPct REAL,
+            KPct REAL
+        )
+    """)
+
+
 
     conn.commit()
     conn.close()
