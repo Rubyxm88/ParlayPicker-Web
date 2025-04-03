@@ -14,7 +14,6 @@ def refresh_data():
 
     if st.button("🔃 Refresh Now"):
         with st.spinner("Pulling fresh data..."):
-            update_all_data()
+            update_all()
             clear_cache()
             st.success("✅ Data updated!")
-
