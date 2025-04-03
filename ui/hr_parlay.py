@@ -5,7 +5,7 @@ from ui.layout import render_scorecard, team_logo_url, color_ev
 from analysis.expected_value import calculate_ev
 from analysis.trends import get_player_trends
 
-def display_hr_parlay():
+def show_hr_parlay():
     st.header("💣 HR Parlay Picker")
 
     conn = get_db_connection()
