@@ -1,7 +1,9 @@
 import requests
 import pandas as pd
 import datetime
-from pybaseball import statcast, fangraphs_leaders
+from pybaseball import statcast
+from pybaseball.fangraphs import batting_stats
+
 
 # --- DraftKings Props (via OpticOdds or similar service) ---
 def fetch_draftkings_props():
@@ -52,12 +54,17 @@ def fetch_statcast_data(start_date, end_date):
 
 # --- FanGraphs Advanced Stats ---
 def fetch_fangraphs_stats():
-    """
-    Fetch advanced batting stats from FanGraphs leaderboard via pybaseball.
-    """
-    try:
-        data = fangraphs_leaders(leaderboard='bat', season=2024, stats=['Barrel%', 'HardHit%', 'K%'], qual=100)
-        return data[["Name", "Barrel%", "HardHit%", "K%"]].rename(columns={"Name": "player"})
-    except Exception as e:
-        print(f"Error fetching FanGraphs stats: {e}")
-        return pd.DataFrame()
+    # Get qualified batters for the current season (adjust year if needed)
+    df = batting_stats(season=2024, qual=50)
+
+    # Normalize column names and filter needed ones
+    df = df.rename(columns={
+        'Name': 'player',
+        'Barrel%': 'BarrelPct',
+        'HardHit%': 'HardHitPct',
+        'K%': 'KPct'
+    })
+
+    df = df[['player', 'BarrelPct', 'HardHitPct', 'KPct']]
+    return df
+
