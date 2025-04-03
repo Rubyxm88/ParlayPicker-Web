@@ -51,3 +51,9 @@ def update_fangraphs_table():
         ))
     conn.commit()
     conn.close()
+
+# ✅ Add this to fix the ImportError
+def update_all():
+    update_props_table()
+    update_statcast_table()
+    update_fangraphs_table()
