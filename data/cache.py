@@ -34,7 +34,7 @@ def run_cache_check():
     else:
         print("✅ Cache is fresh. No update needed.")
 
-def get_last_updated():
+def get_last_update_time():
     cache = read_cache()
     ts = cache.get("last_updated")
     return datetime.fromisoformat(ts) if ts else None
