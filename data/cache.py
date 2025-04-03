@@ -38,3 +38,7 @@ def get_last_updated():
     cache = read_cache()
     ts = cache.get("last_updated")
     return datetime.fromisoformat(ts) if ts else None
+
+def clear_cache():
+    if os.path.exists(CACHE_FILE):
+        os.remove(CACHE_FILE)
