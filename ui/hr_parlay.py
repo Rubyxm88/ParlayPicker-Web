@@ -16,9 +16,10 @@ def show_hr_parlay():
         FROM players p
         JOIN games g ON p.id = g.player_id
         JOIN lines l ON p.id = l.player_id
-        WHERE g.date = DATE('now')
+        WHERE DATE(g.datetime) = DATE('now')
         AND l.line_hr IS NOT NULL
     """)
+
     rows = cur.fetchall()
 
     if not rows:
