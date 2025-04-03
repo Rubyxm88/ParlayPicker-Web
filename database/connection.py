@@ -4,7 +4,6 @@ import os
 
 DB_PATH = os.getenv("DB_PATH", "parlay_data.db")
 
-
 @contextmanager
 def get_connection():
     conn = sqlite3.connect(DB_PATH)
@@ -18,23 +17,23 @@ def get_connection():
     finally:
         conn.close()
 
+# 👇 Add this alias to match expected import in other files
+def get_db_connection():
+    return sqlite3.connect(DB_PATH)
 
 def execute(query, params=None):
     with get_connection() as conn:
         cursor = conn.execute(query, params or [])
         return cursor.fetchall()
 
-
 def insert(query, params=None):
     with get_connection() as conn:
         cursor = conn.execute(query, params or [])
         return cursor.lastrowid
 
-
 def bulk_insert(query, data):
     with get_connection() as conn:
         conn.executemany(query, data)
-
 
 def table_exists(table_name):
     query = "SELECT name FROM sqlite_master WHERE type='table' AND name=?"
