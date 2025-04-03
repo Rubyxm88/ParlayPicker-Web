@@ -1,6 +1,6 @@
 import streamlit as st
 from data.cache import get_last_update_time, clear_cache
-from data.update_db import update_all_data
+from data.update_db import update_all
 from datetime import datetime
 
 def refresh_data():
