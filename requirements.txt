@@ -1,4 +1,14 @@
 streamlit
 pandas
 requests
-MLB-StatsAPI
+python-dateutil
+pytz
+sqlite-utils
+beautifulsoup4
+lxml
+httpx
+unidecode
+matplotlib
+seaborn
+altair
+tqdm
